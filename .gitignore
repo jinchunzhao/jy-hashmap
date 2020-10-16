@@ -1,0 +1,11 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/checkstyle-idea.xml
+.idea/checkstyleidea.tmp/
+.idea/compiler.xml
+.idea/encodings.xml
+.idea/inspectionProfiles/
+.idea/junitgenerator-prj-settings.xml
+.idea/misc.xml
+.idea/uiDesigner.xml
+.idea/workspace.xml
+target/
