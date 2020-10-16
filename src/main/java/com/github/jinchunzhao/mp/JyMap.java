@@ -2,11 +2,11 @@
 package com.github.jinchunzhao.mp;
 
 /**
- * $start$
+ * map接口
  *
  * @author JinChunZhao
  * @version 1.0
- * @date 2020-10-09 14:29
+ * @date 2020-10-11 19:45
  */
 public interface JyMap<K,V> {
 
