@@ -49,7 +49,7 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
     /**
      * 节点数组
      */
-    private Node<K, V>[] table;
+    transient Node<K, V>[] table;
 
     public JyHashMap() {
         threshold = (int) (DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
@@ -178,9 +178,10 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
      * @return node节点
      */
     final Node<K, V> getNode(int hash, K key) {
-        int index = getIndex(key, DEFAULT_INITIAL_CAPACITY);
+
         Node<K, V>[] tab;
         if ((tab = table) != null && tab.length > 0) {
+            int index = getIndex(key, tab.length);
             Node<K, V> node = table[index];
 
             if (Objects.equals(key, node.getKey())) {
@@ -210,50 +211,53 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
      */
     final void putVal(int hash, K key, V value) {
 
+        Node<K,V>[] tab;
+        int n = 0;
         //容器是否为空为空则初始化扩容。
-        if (table == null) {
-            resize();
+        if (table == null || table.length == 0) {
+            tab = resize();
+            n = tab.length;
         }
 
         //如果size大于阈值则进行扩容
-        if (size > DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR) {
-            resize();
+        if (size > threshold) {
+            tab = resize();
+            n = tab.length;
         }
 
         //获取index下标
-        int index = getIndex(key, DEFAULT_INITIAL_CAPACITY);
+        int index = getIndex(key, n);
 
-        //将k-v键值对放入相对应的下标位置，如果计算出角标相同则以链表的形式存放
+        //将k-v键值对放入相对应的下标位置，如果下标位置有值则以链表的形式存放
         Node<K, V> node = table[index];
-        if (node == null) {
+        if (Objects.isNull(node)) {
             table[index] = newNode(hash, key, value, null);
-            size++;
+            if(++size > threshold){
+                resize();
+            }
         } else {
             Node<K, V> newNode = node;
-            if (Objects.isNull(newNode)){
-                table[index] = newNode(hash, key, value, table[index]);
-                if (++size > threshold) {
-                    resize();
-                }
+            //key相同，hash相同旧值替换为新值
+            if (Objects.equals(key,newNode.key) && Objects.equals(hash,newNode.hash)) {
+                newNode.value = value;
             }else{
-                //循环遍历每个节点看看是否存在相同的key
-                while (newNode != null) {
-                    if (Objects.equals(key,newNode.getKey()) && Objects.equals(hash,node.getHash())) {
-                        newNode.setValue(value);
-                        size++;
-                    }
-                    //key不同，hash相同时。node放入下一个节点
-                    Node<K, V> nodeNext = node.getNext();
+                while (true){
+                    Node<K, V> nodeNext = newNode.next;
+                    //如果下一个节点为空，存入下一个节点
                     if (Objects.isNull(nodeNext)){
-                        if (!Objects.equals(key,newNode.getKey()) && Objects.equals(hash,node.getHash())) {
-                            newNode.setNext(newNode(hash,key, value, null));
+                        newNode.next = newNode(hash,key, value, null);
+                        break;
+                    }else{
+                        //链表中key相同，hash相同时旧值替换为新值
+                        if (Objects.equals(key,nodeNext.key) && Objects.equals(hash,nodeNext.hash)) {
+                            newNode.value = value;
+                            break;
                         }
+                        newNode = nodeNext;
                     }
-                    newNode = node.getNext();
                 }
             }
         }
-
     }
 
     /**
@@ -291,6 +295,7 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
     static final int hash(Object key) {
         int h;
         //将hashCode右移16位与hashCode做“异或”运算，即高16位^hashCode（参考jdk8）。如果key为null，固定放到table[0]的位置
+        //保证hash值比较均匀，碰撞的概率比较低，重复的概率很低
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
 
@@ -316,18 +321,30 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
         Node<K, V>[] oldTab = table;
 
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
+        int oldThr = threshold;
         int newCap = 0;
+        int newThr = 0;
         if (oldCap > 0) {
             if (oldCap >= MAXIMUM_CAPACITY) {
+                threshold = Integer.MAX_VALUE;
                 return oldTab;
             } else {
                 newCap = DEFAULT_INITIAL_CAPACITY;
             }
+        } else if (oldThr > 0){
+            newCap = oldThr;
         } else {
             newCap = DEFAULT_INITIAL_CAPACITY;
+            newThr = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
         }
+        if(newThr == 0){
+          float ft =   (float) newCap * loadFactor;
+          newThr = (newCap < MAXIMUM_CAPACITY && ft < (float) MAXIMUM_CAPACITY ? (int)ft : Integer.MAX_VALUE);
+        }
+
         Node<K, V>[] newTab = (Node<K, V>[]) new Node[newCap];
         table = newTab;
+        threshold = newThr;
         if (oldTab != null) {
             for (int j = 0; j < oldCap; ++j) {
                 Node<K, V> e;
@@ -339,7 +356,7 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
                 }
             }
         }
-        table = newTab;
+
         return newTab;
     }
 
