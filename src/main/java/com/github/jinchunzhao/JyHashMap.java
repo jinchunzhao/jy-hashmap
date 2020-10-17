@@ -183,16 +183,19 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
         if ((tab = table) != null && tab.length > 0) {
             int index = getIndex(key, tab.length);
             Node<K, V> node = table[index];
-
-            if (Objects.equals(key, node.getKey())) {
+            if (Objects.isNull(node)){
+                return null;
+            }
+            if (Objects.equals(key, node.key) && Objects.equals(hash,node.hash)) {
                 return node;
-            } else {
-                Node<K, V> nextNode = node.getNext();
+            }
+            Node<K, V> nextNode;
+            if ((nextNode = node.next) != null){
                 do {
-                    if (nextNode.hash == hash && Objects.equals(key, nextNode.getKey())) {
+                    if (nextNode.hash == hash && Objects.equals(key, nextNode.key)) {
                         return nextNode;
                     }
-                } while (nextNode != null);
+                } while ((nextNode = nextNode.next) != null);
             }
         }
         return null;
