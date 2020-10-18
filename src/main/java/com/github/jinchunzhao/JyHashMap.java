@@ -52,7 +52,7 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
     transient Node<K, V>[] table;
 
     public JyHashMap() {
-        threshold = (int) (DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
+//        threshold = (int) (DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
         this.loadFactor = DEFAULT_LOAD_FACTOR;
     }
 
@@ -217,13 +217,13 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
         Node<K,V>[] tab;
         int n = 0;
         //容器是否为空为空则初始化扩容。
-        if (table == null || table.length == 0) {
+        if ((tab = table) == null || (n = table.length) == 0) {
             tab = resize();
             n = tab.length;
         }
 
         //如果size大于阈值则进行扩容
-        if (size > threshold) {
+        if (size >= threshold) {
             tab = resize();
             n = tab.length;
         }
@@ -235,7 +235,7 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
         Node<K, V> node = table[index];
         if (Objects.isNull(node)) {
             table[index] = newNode(hash, key, value, null);
-            if(++size > threshold){
+            if(++size >= threshold){
                 resize();
             }
         } else {
@@ -332,19 +332,20 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             } else {
-                newCap = DEFAULT_INITIAL_CAPACITY;
+                //扩容两倍
+                newCap = oldCap << 1;
+                if (newCap < MAXIMUM_CAPACITY && oldCap >= DEFAULT_INITIAL_CAPACITY) {
+                    //扩容两倍
+                    newThr = oldThr << 1;
+                }else{
+                    newCap = MAXIMUM_CAPACITY;
+                    newThr = (int)(MAXIMUM_CAPACITY * DEFAULT_LOAD_FACTOR);
+                }
             }
-        } else if (oldThr > 0){
-            newCap = oldThr;
         } else {
             newCap = DEFAULT_INITIAL_CAPACITY;
             newThr = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
         }
-        if(newThr == 0){
-          float ft =   (float) newCap * loadFactor;
-          newThr = (newCap < MAXIMUM_CAPACITY && ft < (float) MAXIMUM_CAPACITY ? (int)ft : Integer.MAX_VALUE);
-        }
-
         Node<K, V>[] newTab = (Node<K, V>[]) new Node[newCap];
         table = newTab;
         threshold = newThr;
@@ -354,6 +355,7 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
                 if ((e = oldTab[j]) != null) {
                     oldTab[j] = null;
                     if (e.next == null) {
+//                        e.hash & (newCap - 1)
                         newTab[e.hash & (newCap - 1)] = e;
                     }
                 }
@@ -374,7 +376,9 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
             while (node != null) {
                 System.out.print("[ key:" + node.getKey() + ", value:" + node.getValue() + " ]");
                 node = node.next;
+
             }
+            System.out.println();
         }
         System.out.println("-------------------打印结束-----------------------");
     }
