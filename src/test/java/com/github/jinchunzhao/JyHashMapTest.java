@@ -27,9 +27,9 @@ public class JyHashMapTest {
         map.put("li12","123123124");
         map.put("li14","123123124");
         map.put("li13","123123124");
-//        map.put("li15","123123124");
-//        map.put("li16","123123124");
-//        map.put("li17","123123124");
+        map.put("li15","123123124");
+        map.put("li16","123123124");
+        map.put("li17","123123124");
         map.print();
         String li = map.get("li");
         System.out.println(li);
