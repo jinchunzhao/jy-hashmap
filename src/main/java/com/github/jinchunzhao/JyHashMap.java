@@ -171,6 +171,18 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
     }
 
     /**
+     * 移除
+     * @param key
+     *        key
+     * @return true:成功  false：失败
+     */
+    public Boolean remove(K key) {
+        JyHashMap.Node<K,V> e;
+        return (e = removeNode(hash(key), key)) == null ?
+            false : true;
+    }
+
+    /**
      * 获取节点
      *
      * @param hash 键的hash值
@@ -385,6 +397,52 @@ public class JyHashMap<K, V> implements JyMap<K, V>, Cloneable, Serializable {
         return newTab;
     }
 
+    /**
+     * 移除数组中数据或者链表中数据
+     *
+     * @param hash
+     *        hash值
+     * @param key
+     *        key
+     * @return
+     *        节点
+     */
+    private JyHashMap.Node<K,V> removeNode(int hash, K key) {
+        JyHashMap.Node<K,V> p;
+        JyHashMap.Node<K,V>[] tab = table;
+        int n = tab.length; ;
+        int index = getIndex(key,n);
+        if (tab != null && n  > 0 && (p = tab[index]) != null) {
+            JyHashMap.Node<K,V> node = null, e,head; K k; V v;
+            if (p.hash == hash && Objects.equals(key,p.key)){
+                if (p.next != null){
+                    tab[index] = p.next;
+                }else{
+                    tab[index] = null;
+                }
+                node = p;
+                tab[index] = null;
+                --size;
+                return node;
+            } else if ((e = p.next) != null) {
+                //这里需要重新排列链表
+                head = p;
+                do {
+                    k = e.key;
+                    if (e.hash == hash && Objects.equals(key,e.key)) {
+                        node = e;
+                        head.next = e.next;
+                        //  e = null;
+                        break;
+                    }
+                    p = e;
+                    head = e;
+                } while ((e = e.next) != null);
+                tab[index].next = head;
+            }
+        }
+        return null;
+    }
 
 
     /**
